@@ -1,0 +1,15 @@
+[package]
+name = "resume"
+version = "0.1.0"
+authors = ["Yuxuan Shui <yshuiv7@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+tera = "1"
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "*"
+chrono = "*"
+derive-error = "*"
+failure = { version = "*", features = ["backtrace"] }
+clap = "*"
+askama = "0"
