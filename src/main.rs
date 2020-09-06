@@ -94,6 +94,7 @@ struct Education {
 #[derive(Serialize, Deserialize)]
 struct Experience {
 	company: String,
+	position: String,
 	duration: DateRange,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	description: Option<String>,
@@ -242,6 +243,7 @@ struct ResumeParams<'a> {
 	name: &'a str,
 	contacts: Vec<ContactParams>,
 	educations: &'a [Education],
+	experiences: &'a [Experience],
 	projects: Vec<Project>,
 }
 
@@ -400,6 +402,7 @@ async fn build_params<'a>(p: &'a Person) -> Result<ResumeParams<'a>, Error> {
 		name: &p.name,
 		contacts: c,
 		educations: p.educations.as_slice(),
+		experiences: p.experiences.as_slice(),
 		projects,
 	})
 }

@@ -31,16 +31,29 @@
 		<table>
 		{% for education in educations %}
 		<tr>
-			<td class="degree">{{ education.degree.to_resume_string() }}</td>
-			<td><h2>{{ education.institution }}</h2>
+			<td class="label">{{ education.degree.to_resume_string() }}</td>
+			<td class="desc"><h2>{{ education.institution }}</h2>
 				{{ education.major }}, {{ education.duration.to_resume_string() }}
 			</td>
 		</tr>
 		{% endfor %}
 		</table>
 		</div>
-		<h2 id="experiences">Experiences</h2>
-		<p>2013? ASDF 2014? A 2015 B 2016 C 2017 D</p>
+		<h1 class="section" id="experiences">Experiences</h2>
+		<table>
+		{% for experience in experiences %}
+		<tr>
+			<td class="label">{{ experience.duration.to_resume_string() }}</td>
+			<td class="desc"><h2>{{ experience.company }}</h2>
+				{% match experience.description %}
+					{% when Some with (desc) %}
+						{{ desc }}
+					{% when None %}
+				{% endmatch %}
+			</td>
+		</tr>
+		{% endfor %}
+		</table>
 		<h2 id="project">Project</h2>
 		<h3 id="personal-projects">Personal projects</h3>
 		<p>asdf</p>
