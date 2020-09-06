@@ -13,3 +13,15 @@ derive-error = "*"
 failure = { version = "*", features = ["backtrace"] }
 clap = "*"
 askama = "0"
+hubcaps = "0.6.1"
+url = "2.1.1"
+serde_with = "1.4.0"
+futures = "0.3.5"
+async-std = { version = "1.6.3", features = ["unstable"] }
+tokio = { version = "0.2.22", features = ["macros"] }
+env_logger = "0.7.1"
+log = "0.4.11"
+
+[patch.crates-io]
+hubcaps = { path = "hubcaps" }
+
