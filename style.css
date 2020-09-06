@@ -1,0 +1,75 @@
+#name {
+	font-size: 4em;
+	font-weight: normal;
+	vertical-align: baseline;
+}
+
+/* probably too big */
+#header {
+	font-family: 'Playfair Display', serif;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: baseline;
+	border-bottom: 1.5px solid black;
+}
+
+#other {
+	display: flex;
+	flex-direction: column-reverse;
+	text-align: right;
+	color: #444444;
+}
+
+#other img {
+	width: 1em;
+	height: 1em;
+	vertical-align: middle;
+}
+
+#other div {
+}
+
+td.label {
+	border-right: 1px solid black;
+	width: 5em;
+	padding-right: 0.5em;
+	text-align: right;
+}
+
+td.desc {
+	padding-left: 1em;
+}
+
+table {
+	border-spacing: 0;
+}
+
+td {
+	padding-bottom: 0;
+	padding-top: 0;
+}
+
+#contact {
+	vertical-align: baseline;
+}
+
+#content {
+	width: 98%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.section {
+	border-bottom: 1px solid black;
+	position: sticky;
+	top: 0px;
+	background: white;
+	margin-bottom: 0;
+	padding-bottom: 0.1em;
+}
+
+body {
+	width: 40em;
+	margin: auto;
+}
