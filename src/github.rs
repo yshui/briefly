@@ -9,7 +9,7 @@ pub(crate) fn get_user_projects_from_github(
 	ignore_forks: bool,
 	token: Option<String>,
 ) -> Result<impl Stream<Item = hubcaps::Result<Project>>> {
-	let gh = Github::new("simply/0.0", token.map(hubcaps::Credentials::Token))?;
+	let gh = Github::new("briefly/0.0", token.map(hubcaps::Credentials::Token))?;
 	let gh2 = gh.clone();
 	let opts = hubcaps::repositories::UserRepoListOptions::builder()
 		.repo_type(hubcaps::repositories::Type::All)
@@ -99,7 +99,7 @@ where
 			}
 		}
 	}
-	let gh = Github::new("simply/0.0", token.map(hubcaps::Credentials::Token))?;
+	let gh = Github::new("briefly/0.0", token.map(hubcaps::Credentials::Token))?;
 	let st: futures::stream::FuturesUnordered<_> = repos
 		.into_iter()
 		.filter_map(|v| {
