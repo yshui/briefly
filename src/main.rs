@@ -1,9 +1,18 @@
-use ::std::collections::{HashMap, HashSet};
+use ::std::collections::HashMap;
+use ::std::sync::Mutex;
 use chrono::naive::NaiveDate as Date;
+use derive_more::Display;
 use failure::{format_err, Error};
 use log::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+mod citation;
+mod filters;
 mod github;
+mod md;
+
+lazy_static::lazy_static! {
+	static ref FOOTNOTES: Mutex<Option<HashMap<String, usize>>> = Mutex::new(Some(HashMap::new()));
+}
 
 struct DateRange {
 	start: Date,
@@ -13,9 +22,13 @@ struct DateRange {
 impl DateRange {
 	fn to_resume_string(&self) -> String {
 		if let Some(end) = self.end {
-			format!("{} - {}", self.start.format("%b, %Y"), end.format("%b, %Y"))
+			format!(
+				"{} - {}",
+				self.start.format("%b,&nbsp;%Y"),
+				end.format("%b,&nbsp;%Y")
+			)
 		} else {
-			format!("{} - Current", self.start.format("%b, %Y"))
+			format!("{} - Current", self.start.format("%b,&nbsp;%Y"))
 		}
 	}
 }
@@ -62,6 +75,53 @@ impl<'a> Deserialize<'a> for DateRange {
 	}
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+enum Citation {
+	Raw(String),
+	RawWithYear { text: String, year: Option<u32> },
+	Url(citation::UrlCitation),
+	Doi(citation::DoiCitation),
+	Bibtex(citation::BibtexCitation),
+}
+
+impl Citation {
+	fn to_raw(&self) -> Option<Citation> {
+		use Citation::*;
+		match self {
+			Raw(s) => Some(Raw(s.clone())),
+			RawWithYear { text, .. } => Some(Raw(text.clone())),
+			Url(url) => url.to_raw(),
+			Doi(doi) => doi.to_raw(),
+			Bibtex(bib) => bib.to_raw(),
+		}
+	}
+	fn set_year(self, year: Option<u32>) -> Citation {
+		use Citation::*;
+		if let Raw(s) = self {
+			RawWithYear { text: s, year }
+		} else {
+			self
+		}
+	}
+	fn to_raw_with_year(&self) -> Option<Citation> {
+		use Citation::*;
+		match self {
+			Raw(s) => Some(RawWithYear {
+				text: s.clone(),
+				year: None,
+			}),
+			RawWithYear { text, year } => Some(RawWithYear {
+				text: text.clone(),
+				year: *year,
+			}),
+			Url(url) => url.to_raw().map(|v| v.set_year(url.year())),
+			Doi(doi) => doi.to_raw().map(|v| v.set_year(doi.year())),
+			Bibtex(bib) => bib.to_raw().map(|v| v.set_year(bib.year())),
+		}
+	}
+}
+
 #[derive(Serialize, Deserialize)]
 enum Degree {
 	BS,
@@ -85,9 +145,11 @@ struct Education {
 	degree: Degree,
 	major: String,
 	duration: DateRange,
-	#[serde(skip_serializing_if = "Option::is_none")]
+	#[serde(skip_serializing_if = "Option::is_none", default)]
+	location: Option<String>,
+	#[serde(skip_serializing_if = "Option::is_none", default)]
 	gpa: Option<f32>,
-	#[serde(skip_serializing_if = "Option::is_none")]
+	#[serde(skip_serializing_if = "Option::is_none", default)]
 	courses: Option<Vec<String>>,
 }
 
@@ -96,8 +158,11 @@ struct Experience {
 	company: String,
 	position: String,
 	duration: DateRange,
-	#[serde(skip_serializing_if = "Option::is_none")]
-	description: Option<String>,
+	description: String,
+	#[serde(skip_serializing_if = "Option::is_none", default)]
+	location: Option<String>,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	tags: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -108,12 +173,27 @@ struct Contact {
 }
 
 #[derive(Serialize, Deserialize)]
+struct Skill {
+	category: String,
+	#[serde(default)]
+	description: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
 struct Person {
 	name: String,
+	#[serde(default)]
+	resume_url: Option<String>,
 	contacts: Vec<Contact>,
 	educations: Vec<Education>,
 	experiences: Vec<Experience>,
 	projects: Vec<ProjectParam>,
+	#[serde(default)]
+	skills: Vec<Skill>,
+	#[serde(default)]
+	references: HashMap<String, Citation>,
+	#[serde(default)]
+	publications: Vec<Citation>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -156,7 +236,95 @@ enum ProjectImport {
 		ignore_forks: bool,
 		#[serde(default)]
 		repos: Option<Vec<String>>,
+		#[serde(default)]
+		token: Option<String>,
 	},
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Display)]
+#[serde(rename_all = "lowercase")]
+enum ProjectRole {
+	Owner,
+	Maintainer,
+	Contributor,
+}
+
+/// Single digit precision deciaml real number
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
+struct Decimal1(u64);
+impl ::std::fmt::Display for Decimal1 {
+	fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+		<f64 as ::std::fmt::Display>::fmt(&self.into(), f)
+	}
+}
+
+impl ::std::ops::Add<Decimal1> for Decimal1 {
+	type Output = Self;
+	fn add(self, rhs: Self) -> Self::Output {
+		Self(rhs.0 + self.0)
+	}
+}
+
+impl ::std::ops::AddAssign<Decimal1> for Decimal1 {
+	fn add_assign(&mut self, rhs: Self) {
+		self.0 += rhs.0;
+	}
+}
+
+impl From<f64> for Decimal1 {
+	fn from(f: f64) -> Self {
+		Self((f * 10.0) as u64)
+	}
+}
+
+impl Into<f64> for &Decimal1 {
+	fn into(self) -> f64 {
+		self.0 as f64 / 10.0
+	}
+}
+
+impl Into<f64> for Decimal1 {
+	fn into(self) -> f64 {
+		(&self).into()
+	}
+}
+
+impl<'de> ::serde::Deserialize<'de> for Decimal1 {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: Deserializer<'de>,
+	{
+		struct Visitor;
+		impl<'de> ::serde::de::Visitor<'de> for Visitor {
+			type Value = Decimal1;
+			fn expecting(&self, fmt: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+				write!(fmt, "a float")
+			}
+			fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
+			where
+				E: ::serde::de::Error,
+			{
+				Ok(v.into())
+			}
+		}
+
+		deserializer.deserialize_f64(Visitor)
+	}
+}
+
+impl ::serde::Serialize for Decimal1 {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
+		serializer.serialize_f64(self.into())
+	}
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct LanguageStat {
+	language: String,
+	percentage: Decimal1,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -187,7 +355,11 @@ struct Project {
 	#[serde(default, skip_serializing_if = "Option::is_none")]
 	deletions: Option<u64>,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
-	languages: Vec<String>,
+	languages: Vec<LanguageStat>,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	tags: Vec<String>,
+	#[serde(default, skip_serializing_if = "Option::is_none")]
+	role: Option<ProjectRole>,
 }
 
 mod serde_option_display_fromstr {
@@ -241,55 +413,49 @@ struct ContactParams {
 #[template(path = "resume.html", escape = "none")]
 struct ResumeParams<'a> {
 	name: &'a str,
+	resume_url: Option<&'a str>,
 	contacts: Vec<ContactParams>,
 	educations: &'a [Education],
 	experiences: &'a [Experience],
 	projects: Vec<Project>,
+	references: Vec<(&'a str, &'a str)>,
+	publications: Vec<(&'a str, Option<u32>)>,
+	skills: &'a [Skill],
 }
 
-async fn build_params<'a>(p: &'a Person) -> Result<ResumeParams<'a>, Error> {
+async fn fetch(mut person: Person) -> Result<Person, Error> {
 	use futures::stream::{StreamExt, TryStreamExt};
-	let mut c = Vec::new();
-	let mut github_username = None;
-	for i in p.contacts.iter() {
-		c.push(ContactParams {
-			link: match i.type_.as_str() {
-				"github" => {
-					github_username = Some(&i.value);
-					Some(format!("https://github.com/{}", i.value))
-				}
-				"email" => Some(format!("mailto:{}", i.value)),
-				_ => None,
-			},
-			icon: match i.type_.as_str() {
-				"github" => Some("icons/github.svg".into()),
-				"email" => Some("icons/mail.svg".into()),
-				_ => None,
-			},
-			value: i.value.clone(),
-		});
-	}
+	let github_username = person
+		.contacts
+		.iter()
+		.find(|v| v.type_ == "github")
+		.map(|v| v.value.as_str());
 
 	let mut project_map = HashMap::new();
 	let mut sort_order = None;
 	let mut import_mode = ProjectImportMode::Combine;
 	// Process project imports first
-	for pi in p.projects.iter() {
+	for pi in person.projects.iter() {
 		match pi {
 			ProjectParam::Import(ProjectImport::GitHub {
 				ignore_forks,
 				repos: None,
+				token,
 			}) => {
 				if let Some(github_username) = github_username {
 					async_std::stream::Extend::extend(
 						&mut project_map,
-						github::get_user_projects_from_github(github_username, *ignore_forks)?
-							.map_ok(|v| (v.name.clone(), v))
-							.map_err(|e| {
-								error!("Failed fetching from GitHub {}", e);
-								e
-							})
-							.filter_map(|x| futures::future::ready(x.ok())),
+						github::get_user_projects_from_github(
+							github_username,
+							*ignore_forks,
+							token.clone(),
+						)?
+						.map_ok(|v| (v.name.clone(), v))
+						.map_err(|e| {
+							error!("Failed fetching from GitHub {}", e);
+							e
+						})
+						.filter_map(|x| futures::future::ready(x.ok())),
 					)
 					.await;
 				} else {
@@ -297,17 +463,23 @@ async fn build_params<'a>(p: &'a Person) -> Result<ResumeParams<'a>, Error> {
 				}
 			}
 			ProjectParam::Import(ProjectImport::GitHub {
-				repos: Some(repos), ..
+				repos: Some(repos),
+				token,
+				..
 			}) => {
 				async_std::stream::Extend::extend(
 					&mut project_map,
-					github::get_projects_info_from_github(repos)?
-						.map_ok(|v| (v.name.clone(), v))
-						.map_err(|e| {
-							error!("Failed fetching from GitHub {}", e);
-							e
-						})
-						.filter_map(|x| futures::future::ready(x.ok())),
+					github::get_projects_info_from_github(
+						repos,
+						github_username,
+						token.clone(),
+					)?
+					.map_ok(|v| (v.name.clone(), v))
+					.map_err(|e| {
+						error!("Failed fetching from GitHub {}", e);
+						e
+					})
+					.filter_map(|x| futures::future::ready(x.ok())),
 				)
 				.await;
 			}
@@ -325,9 +497,11 @@ async fn build_params<'a>(p: &'a Person) -> Result<ResumeParams<'a>, Error> {
 	}
 
 	// Adding manually project entries
-	for pi in p.projects.iter() {
+	for pi in person.projects.iter_mut() {
 		match pi {
 			ProjectParam::Raw(p) => {
+				p.languages
+					.sort_unstable_by_key(|v| ::std::cmp::Reverse(v.percentage));
 				if let Some(old) = project_map.get_mut(&p.name) {
 					debug!("Merging project entry {}", p.name);
 					if p.url.is_some() {
@@ -342,6 +516,12 @@ async fn build_params<'a>(p: &'a Person) -> Result<ResumeParams<'a>, Error> {
 					if p.contributions.is_some() {
 						old.contributions = p.contributions.clone();
 					}
+					if !p.tags.is_empty() {
+						old.tags = p.tags.clone();
+					}
+					if p.role.is_some() {
+						old.role = p.role;
+					}
 				} else {
 					project_map.insert(p.name.clone(), p.clone());
 				}
@@ -349,9 +529,9 @@ async fn build_params<'a>(p: &'a Person) -> Result<ResumeParams<'a>, Error> {
 			_ => {}
 		}
 	}
-	let mut projects = Vec::new();
+	let mut projects: Vec<_>;
 	if let ProjectImportMode::Whitelist = import_mode {
-		let raw_entries: Vec<_> = p
+		let raw_entries: Vec<_> = person
 			.projects
 			.iter()
 			.filter_map(|p| match p {
@@ -359,17 +539,15 @@ async fn build_params<'a>(p: &'a Person) -> Result<ResumeParams<'a>, Error> {
 				_ => None,
 			})
 			.collect();
-		debug!("{:?}", raw_entries);
 		projects = raw_entries
 			.into_iter()
 			.filter_map(|name| project_map.get(name).map(Clone::clone))
 			.collect();
+	} else {
+		projects = project_map.iter().map(|(_, v)| v.clone()).collect();
 	}
 	if let Some(sort_order) = sort_order {
 		use ::std::cmp::Reverse;
-		if ProjectImportMode::Whitelist != import_mode {
-			projects = project_map.iter().map(|(_, v)| v.clone()).collect();
-		}
 		match sort_order {
 			ProjectSortOrder::Stars => projects.sort_unstable_by_key(|v| Reverse(v.stars)),
 			ProjectSortOrder::Forks => projects.sort_unstable_by_key(|v| Reverse(v.forks)),
@@ -380,7 +558,8 @@ async fn build_params<'a>(p: &'a Person) -> Result<ResumeParams<'a>, Error> {
 				projects.sort_unstable_by_key(|v| Reverse((v.stars, v.forks)))
 			}
 			ProjectSortOrder::Manual if import_mode != ProjectImportMode::Whitelist => {
-				let raw_entries: HashMap<_, _> = p
+				debug!("Manual sort");
+				let raw_entries: HashMap<_, _> = person
 					.projects
 					.iter()
 					.filter_map(|p| match p {
@@ -390,32 +569,154 @@ async fn build_params<'a>(p: &'a Person) -> Result<ResumeParams<'a>, Error> {
 					.enumerate()
 					.map(|(i, v)| (v, i))
 					.collect();
-				projects
-					.sort_unstable_by_key(|v| Reverse(raw_entries.get(&v.name).map(|v| *v)));
+				projects.sort_unstable_by_key(|v| raw_entries.get(&v.name).map(|v| *v));
 			}
 			_ => {}
 		}
 	}
 	debug!("{}", serde_yaml::to_string(&projects)?);
+	person.projects = projects.into_iter().map(|v| ProjectParam::Raw(v)).collect();
+	person.projects.push(ProjectParam::Sort {
+		order_by: ProjectSortOrder::Manual,
+	});
+
+	// Fetch citations
+	use ::futures::FutureExt;
+	debug!("{:?}", person.references);
+	let fut: futures::stream::FuturesUnordered<_> = person
+		.references
+		.iter_mut()
+		.map(|(_, v)| v)
+		.chain(person.publications.iter_mut())
+		.map(|v| {
+			async move {
+				Result::<_, Error>::Ok(match v {
+					Citation::Url(url) => url.fetch().await?,
+					Citation::Doi(doi) => doi.fetch().await?,
+					Citation::Bibtex(bib) => bib.fetch().await?,
+					_ => (),
+				})
+			}
+			.boxed()
+		})
+		.collect();
+	let () = fut.try_collect().await?;
+	person.references = person
+		.references
+		.into_iter()
+		.filter_map(|(k, v)| v.to_raw().map(|v| (k, v)))
+		.collect();
+	person.publications = person
+		.publications
+		.into_iter()
+		.filter_map(|v| v.to_raw_with_year())
+		.collect();
+	debug!("{:?}", person.references);
+	Ok(person)
+}
+
+fn build_params<'a>(
+	p: &'a Person,
+	footnotes: Option<HashMap<String, usize>>,
+) -> Result<ResumeParams<'a>, Error> {
+	let mut c = Vec::new();
+	let it = p.references.iter().filter_map(|(k, v)| match v {
+		Citation::Raw(s) => Some((k.as_str(), s.as_str())),
+		_ => None,
+	});
+	let mut references: Vec<_> = if let Some(footnotes) = footnotes.as_ref() {
+		// Remove unused references
+		it.filter(|(k, _)| footnotes.get(*k).is_some()).collect()
+	} else {
+		it.collect()
+	};
+	// Sort references
+	if let Some(footnotes) = footnotes {
+		references.sort_unstable_by_key(|(k, _)| footnotes.get(*k).unwrap());
+	}
+
+	for i in p.contacts.iter() {
+		c.push(ContactParams {
+			link: match i.type_.as_str() {
+				"github" => Some(format!("https://github.com/{}", i.value)),
+				"email" => Some(format!("mailto:{}", i.value)),
+				"blog" => Some(i.value.clone()),
+				_ => None,
+			},
+			icon: match i.type_.as_str() {
+				"github" => Some("icons/github.svg".into()),
+				"email" => Some("icons/mail.svg".into()),
+				"blog" => Some("icons/blog.svg".into()),
+				_ => None,
+			},
+			value: i.value.clone(),
+		});
+	}
 
 	Ok(ResumeParams {
 		name: &p.name,
+		resume_url: p.resume_url.as_ref().map(String::as_str),
 		contacts: c,
 		educations: p.educations.as_slice(),
 		experiences: p.experiences.as_slice(),
-		projects,
+		projects: p
+			.projects
+			.iter()
+			.filter_map(|v| match v {
+				ProjectParam::Raw(p) => Some(p.clone()),
+				_ => None,
+			})
+			.collect(),
+		publications: p
+			.publications
+			.iter()
+			.filter_map(|v| match v {
+				Citation::RawWithYear { text, year } => Some((text.as_str(), *year)),
+				_ => None,
+			})
+			.collect(),
+		references,
+		skills: p.skills.as_slice(),
 	})
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
 	env_logger::init();
-	let args = clap::App::new("resume").arg(clap::Arg::with_name("input").required(true));
-	let f = std::fs::read(args.get_matches().value_of("input").unwrap()).unwrap();
-	let r = serde_yaml::from_slice::<Person>(f.as_slice()).unwrap();
-	debug!("{}", serde_yaml::to_string(&r).unwrap());
+	let args = clap::App::new("resume")
+		.arg(clap::Arg::with_name("input").required(true))
+		.get_matches();
+	warn!("{:?}", args.is_present("fetch"));
+	let input_filename = args.value_of("input").unwrap();
+	let cache_filename = format!("{}-cache", input_filename);
+	let cache_info = std::fs::metadata(&cache_filename);
+	let input_info = std::fs::metadata(&input_filename)?;
+	let cache_data = if cache_info.is_ok() {
+		std::fs::read(&cache_filename).ok()
+	} else {
+		None
+	};
+	let r = if cache_data.is_some() && cache_info?.modified()? >= input_info.modified()? {
+		serde_yaml::from_slice::<Person>(cache_data.unwrap().as_slice())?
+	} else {
+		let f = std::fs::read(input_filename).unwrap();
+		let r = serde_yaml::from_slice::<Person>(f.as_slice())?;
+		debug!("{}", serde_yaml::to_string(&r)?);
 
-	let resume = build_params(&r).await?;
-	println!("{}", resume.render().unwrap());
+		let mut runtime = tokio::runtime::Runtime::new()?;
+		let r = runtime.block_on(fetch(r))?;
+		if let Some(mut cache_f) =
+			std::fs::File::create(format!("{}-cache", input_filename)).ok()
+		{
+			use ::std::io::Write;
+			write!(cache_f, "{}", serde_yaml::to_string(&r)?)?;
+		}
+		r
+	};
+	let resume = build_params(&r, None)?;
+	resume.render()?;
+
+	let footnotes = FOOTNOTES.lock().unwrap().replace(HashMap::new()).unwrap();
+	let resume = build_params(&r, Some(footnotes))?;
+	println!("{}", resume.render()?);
 	Ok(())
 }

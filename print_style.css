@@ -1,0 +1,35 @@
+a:visited:not(.project_url) {
+	color: rgb(0,0,238);
+}
+
+.section {
+	position: static !important;
+	break-before: auto;
+	break-after: avoid;
+}
+
+.pagebreak {
+	break-before: auto;
+}
+
+.nopagebreak {
+	break-before: avoid;
+}
+
+.nopagebreak * {
+	break-before: avoid !important;
+	break-after: avoid !important;
+	break-inside: avoid !important;
+}
+
+h2 {
+	font-weight: bold !important;
+}
+
+.reference:target {
+	background: #ffffff !important;
+}
+
+#hint {
+	display: block !important;
+}

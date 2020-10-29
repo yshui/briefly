@@ -21,6 +21,15 @@ async-std = { version = "1.6.3", features = ["unstable"] }
 tokio = { version = "0.2.22", features = ["macros"] }
 env_logger = "0.7.1"
 log = "0.4.11"
+derive_more = "0.99.9"
+pulldown-cmark = "0.8.0"
+isahc = "0.9.8"
+scraper = "0.12.0"
+async-trait = "0.1.40"
+nom-bibtex = "0.3.0"
+serde_json = "1.0.57"
+itertools = "0.9.0"
+lazy_static = "1.4.0"
 
 [patch.crates-io]
 hubcaps = { path = "hubcaps" }
