@@ -1,1 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><rect x="8" y="10" width="7" height="2"/><rect x="8" y="14" width="7" height="2"/><rect x="8" y="18" width="4" height="2"/><path d="M19,21H15V17l7.94-8.07,4.21,4.12Zm-2-2h1.18l6.11-6L23,11.75l-6,6.07V19Z"/><polygon points="18.59 20 18 20 18 22 6 22 6 7 18 7 18 15.38 20 13.34 20 5 4 5 4 24 20 24 20 18.62 18.59 20"/></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 30 30"
+   version="1.1"
+   id="svg12"
+   sodipodi:docname="blog.svg"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
+  <metadata
+     id="metadata18">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs16" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="3840"
+     inkscape:window-height="2133"
+     id="namedview14"
+     showgrid="false"
+     inkscape:zoom="23.833333"
+     inkscape:cx="15"
+     inkscape:cy="15"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg12"
+     inkscape:document-rotation="0" />
+  <rect
+     x="7.899806"
+     y="7.9599018"
+     width="8.7948627"
+     height="2.5128181"
+     id="rect2"
+     style="stroke-width:1.25641" />
+  <rect
+     x="7.899806"
+     y="12.985537"
+     width="8.7948627"
+     height="2.5128181"
+     id="rect4"
+     style="stroke-width:1.25641" />
+  <rect
+     x="7.899806"
+     y="18.011173"
+     width="5.0256362"
+     height="2.5128181"
+     id="rect6"
+     style="stroke-width:1.25641" />
+  <path
+     d="m 19.915741,22.085261 h -4.58374 v -4.58374 l 9.098725,-9.2476944 4.824386,4.7212514 z m -2.29187,-2.291869 h 1.352203 l 7.001663,-6.875611 -1.478256,-1.432418 -6.87561,6.955826 z"
+     id="path8"
+     style="stroke-width:1.14594" />
+  <polygon
+     points="18,15.38 20,13.34 20,5 4,5 4,24 20,24 20,18.62 18.59,20 18,20 18,22 6,22 6,7 18,7 "
+     id="polygon10"
+     transform="matrix(1.256409,0,0,1.256409,-2.1514656,-4.6041877)" />
+</svg>

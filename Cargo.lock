@@ -268,6 +268,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "briefly"
+version = "0.1.0"
+dependencies = [
+ "askama",
+ "async-std",
+ "async-trait",
+ "chrono",
+ "clap",
+ "derive-error",
+ "derive_more",
+ "env_logger",
+ "failure",
+ "futures",
+ "hubcaps",
+ "isahc",
+ "itertools",
+ "lazy_static",
+ "log",
+ "nom-bibtex",
+ "pulldown-cmark",
+ "scraper",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "serde_yaml",
+ "tera",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "bstr"
 version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1907,37 +1938,6 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "winreg",
-]
-
-[[package]]
-name = "resume"
-version = "0.1.0"
-dependencies = [
- "askama",
- "async-std",
- "async-trait",
- "chrono",
- "clap",
- "derive-error",
- "derive_more",
- "env_logger",
- "failure",
- "futures",
- "hubcaps",
- "isahc",
- "itertools",
- "lazy_static",
- "log",
- "nom-bibtex",
- "pulldown-cmark",
- "scraper",
- "serde",
- "serde_json",
- "serde_with",
- "serde_yaml",
- "tera",
- "tokio",
- "url",
 ]
 
 [[package]]
