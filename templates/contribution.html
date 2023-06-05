@@ -1,0 +1,27 @@
+<div class="contrib">
+<span class="contrib_header">
+	<span class="contrib_project_info">
+	<span class="contrib_project_title">
+		{% if project.url.is_some() %}
+		<a href="{{ project.url.as_ref().unwrap() }}" class="project_url">
+		{% endif %}
+		{% if project.role.is_some() && project.role.unwrap() == ProjectRole::Contributor %}
+		<span class="project_owner">{{ project.owner.as_ref().unwrap() }}/</span>{% endif %}{{ project.name }}
+		{% if project.url.is_some() %}
+		</a>
+		{% endif %}
+	</span>
+	</span>
+</span>
+<!--
+{% if project.description.is_some() %}
+<div class="contrib_project_description">
+{{ project.description.as_ref().unwrap()|md|safe }}
+{% endif %}
+!-->
+{% if project.contributions.is_some() %}
+<span class="contributions">
+{{ project.contributions.as_ref().unwrap()|inline_md|safe }}
+</span>
+{% endif %}
+</div>

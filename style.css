@@ -1,6 +1,6 @@
 /* Known bug: chromium doesn't print webfont correctly, font-weights are sometimes ignored */
 /*@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Playfair+Display:wght@400;700&family=Fira+Sans+Condensed:wght@300&family=EB+Garamond:wght@400&display=swap');*/
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Fira+Sans+Condensed:wght@300&family=EB+Garamond:wght@400&family=Crimson+Text:ital,wght@1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Playfair+Display:wght@400;700&family=Fira+Sans+Condensed:wght@300&family=EB+Garamond:wght@400&family=Crimson+Text:ital,wght@1,700&display=swap');
 
 #name {
 	font-size: 4.8em;
@@ -13,17 +13,15 @@
 	font-family: 'Playfair Display', serif;
 	display: flex;
 	flex-direction: row;
-	justify-content: space-between;
+	flex-wrap: wrap;
 	align-items: baseline;
-	border-bottom: 1.5px solid black;
+	justify-content: space-between;
+	height: 6em;
 }
 
 .contact_entry {
-	display: flex;
-	flex-wrap: nowrap;
-	align-items: baseline;
-	justify-content: flex-end;
 	font-size: 0.92em;
+	text-align: right;
 }
 
 .display {
@@ -33,6 +31,13 @@
 .offset {
 	padding-left: 1em;
 	padding-top: 1em;
+}
+#skills {
+	padding-left: 0.5em;
+	scroll-margin-top: 3em;
+}
+
+#skills p {
 }
 
 #footer {
@@ -56,11 +61,11 @@
 	color: #444444;
 }
 
-#other img {
+.contact_entry img {
 	width: 1em;
 	height: 1em;
 	margin-right: 0.3em;
-	/*vertical-align: middle;*/
+	vertical-align: middle;
 	align-self: flex-end;
 }
 
@@ -81,6 +86,7 @@ td.label {
 td.title {
 	padding-left: 1em;
 	padding-top: 1em;
+	padding-bottom: 0.2em;
 }
 
 td.title h2 {
@@ -109,14 +115,6 @@ td.additional_title {
 	vertical-align: bottom;
 }
 
-td.topics {
-	width: 40%;
-	text-align: right;
-	font-size: 0.75em;
-	opacity: 0.4;
-	vertical-align: baseline;
-}
-
 .content {
 	padding-left: 1em;
 	padding-bottom: 0.5em;
@@ -125,7 +123,7 @@ td.topics {
 .subtitle {
 	font-size: 0.9em;
 	margin-bottom: 0.8em;
-	opacity: 0.8;
+	opacity: 0.7;
 }
 .subtitle img {
 	width: 1em;
@@ -176,21 +174,31 @@ td {
 
 .language_bar {
 	height: 0.4em;
-	width: 90%;
 	opacity: 0.8;
 	display: flex;
-	margin-left: 1em;
 	border-radius: 5px;
 	overflow: hidden;
 }
 
 .language_dots {
 	padding-top: 0.2em;
-	padding-left: 1em;
 	display: flex;
 	justify-content: space-between;
 	width: 80%;
 	margin-bottom: 0.5em;
+	flex-wrap: wrap;
+}
+
+.language_dot {
+	display: flex;
+	align-items: center;
+	font-size: 0.8em;
+	font-family: sans;
+}
+
+#projects, #contributions {
+	padding-left: 0.5em;
+	scroll-margin-top: 5em;
 }
 
 .project_url {
@@ -198,16 +206,80 @@ td {
 	color: black;
 }
 
-.project_title {
+.project_info {
 	display: flex;
-	flex-wrap: nowrap;
+	flex-direction: column;
+	flex-grow: 10;
+	flex-basis: 1em;
+	flex-shrink: 0;
+}
+
+.project_header {
+	display: flex;
+	justify-content: stretch;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 1em;
+	row-gap: 0;
+	break-after: avoid;
+	margin-top: 1em;
+}
+.project_topics {
+	width: 20%;
+	text-align: right;
+	font-size: 0.75em;
+	opacity: 0.4;
+	vertical-align: baseline;
+	flex-grow: 1;
+	flex-shrink: 1;
+	flex-basis: 8em;
+}
+p {
+	break-inside: avoid;
+}
+
+#opensource {
+}
+.contrib_project_title {
+	font-size: 1.1em;
+	font-family: 'Playfair Display', serif;
+	white-space: nowrap;
+	font-weight: bold;
+	display: block;
+}
+
+.project_title {
+	font-family: 'Playfair Display', serif;
+	flex-wrap: wrap;
+	display: flex;
+	gap: 1em;
+	padding-left: 0.2em;
+	padding-bottom: 0.2em;
+	white-space: nowrap;
 	align-items: baseline;
 }
+.project_title h2 {
+	margin: 0px;
+}
 .project_stats {
-	display: flex;
+	display: inline-block;
+	justify-content: start;
 	font-size: 0.9em;
 	opacity: 0.8;
+	white-space: nowrap;
 	font-family: serif;
+}
+.project_stats img {
+	vertical-align: middle;
+}
+.project_description {
+	padding-left: 0.2em;
+	break-inside: avoid;
+}
+
+.project_description p {
+	margin-top: 0.2em;
+	margin-bottom: 1.5em;
 }
 
 .archived {
@@ -236,13 +308,6 @@ td {
 	align-self: flex-end;
 }
 
-.language_dot {
-	display: flex;
-	align-items: center;
-	font-size: 0.8em;
-	font-family: sans;
-}
-
 .dot {
 	height: 0.6em;
 	width: 0.6em;
@@ -252,18 +317,73 @@ td {
 }
 
 .language_bar span {
-	border-right: 1px solid white;
 	background-color: black;
 }
 
 .section {
 	border-bottom: 1px solid black;
 	position: sticky;
-	top: 0px;
 	background: white;
 	margin-bottom: 0;
 	padding-bottom: 0.1em;
+}
+
+#main {
+	position: relative;
+}
+
+h1.section {
+	top: 0px;
+	font-size: 2em;
 	z-index: 100;
+}
+
+#main {
+	background: white;
+}
+
+ol {
+	counter-reset: item;
+	list-style-type: none;
+}
+
+ol > li {
+	margin-left: -0.5em;
+}
+
+#toc li:before {
+	content: counters(item, ".") ". ";
+	counter-increment: item;
+}
+
+#toc {
+	position: absolute;
+	top: 0em;
+	height: 100%;
+	z-index: -100;
+}
+#toc > ol {
+	position: sticky;
+	top: 1em;
+}
+
+@media screen and (max-width:70em) {
+	#toc {
+		left: 0em;
+		transition: left 0.8s ease-in;
+	}
+}
+
+@media screen and (min-width:70em) {
+	#toc {
+		left: -14em;
+		transition: left 0.8s ease-out;
+	}
+}
+
+h2.section {
+	top: calc(1.9em + 1px);
+	z-index: 99;
 }
 
 .project_owner {
@@ -329,14 +449,16 @@ body {
 #hint {
 	position: absolute;
 	left: 0em;
-	top: 0em;
+	top: 1em;
 	text-align: center;
-	padding: 0.6em 0.4em 0.6em 0.1em;
+	padding: 0.6em 0.1em 0.6em 0.2em;
 	border-radius: 0 1em 1em 0;
 	border: 1.5px solid black;
 	border-left: 0px;
 	writing-mode: vertical-rl;
+	font-size: 1em;
 	display: none;
+	line-height: 1.2em;
 }
 
 .references ul {
@@ -345,4 +467,16 @@ body {
 
 .trim_end {
 	margin-bottom: 0.2em;
+	margin-top: 0.8em;
+}
+
+.skill_header {
+	font-size: 1.3em;
+	font-weight: bold;
+	display: block;
+	margin-bottom: 0.3em;
+}
+
+.contrib {
+	margin-bottom: 1em;
 }

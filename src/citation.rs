@@ -1,14 +1,15 @@
-use ::failure::Error;
-use ::isahc::prelude::*;
+use ::isahc::{prelude::*, Request};
 use ::log::*;
 use ::scraper::{Html, Selector};
 use ::serde::{Deserialize, Serialize};
 use ::std::collections::HashMap;
 use ::std::fmt::Write;
+use anyhow::Error;
 
+#[serde_with::serde_as]
 #[derive(Deserialize, Serialize, Debug)]
 pub(crate) struct UrlCitation {
-	#[serde(with = "serde_with::rust::display_fromstr")]
+	#[serde_as(as = "serde_with::DisplayFromStr")]
 	url: ::url::Url,
 	#[serde(skip)]
 	title: Option<String>,
@@ -17,7 +18,7 @@ pub(crate) struct UrlCitation {
 impl UrlCitation {
 	pub(crate) async fn fetch(&mut self) -> Result<(), Error> {
 		let mut response = isahc::get_async(self.url.as_str()).await?;
-		let text = response.text_async().await?;
+		let text = response.text().await?;
 		let html = Html::parse_document(&text);
 		self.title = html
 			.select(&Selector::parse("title").unwrap())
@@ -70,7 +71,7 @@ impl BibtexCitation {
 		let data = data
 			.get(0)
 			.map(Ok)
-			.unwrap_or(Err(failure::format_err!("No citations found in bibtex")))?;
+			.unwrap_or(Err(anyhow::anyhow!("No citations found in bibtex")))?;
 		self.tags = Some(
 			data.tags()
 				.iter()
@@ -112,7 +113,10 @@ impl BibtexCitation {
 		}
 	}
 	pub(crate) fn year(&self) -> Option<u32> {
-		self.tags.as_ref().and_then(|v| v.get("year")).map(|y| y.parse().unwrap())
+		self.tags
+			.as_ref()
+			.and_then(|v| v.get("year"))
+			.map(|y| y.parse().unwrap())
 	}
 }
 
@@ -161,7 +165,7 @@ impl DoiCitation {
 			.redirect_policy(isahc::config::RedirectPolicy::Follow)
 			.body(())?;
 		let mut res = isahc::send_async(req).await?;
-		let text = res.text_async().await?;
+		let text = res.text().await?;
 		debug!("Fetched {}", self.doi);
 		debug!("{:?}", text);
 		self.csl = Some(serde_json::from_str(&text)?);
@@ -218,7 +222,8 @@ impl DoiCitation {
 	}
 
 	pub(crate) fn year(&self) -> Option<u32> {
-		self.csl.as_ref()
+		self.csl
+			.as_ref()
 			.and_then(|c| c.issued.as_ref())
 			.and_then(|c| c.date_parts.get(0))
 			.and_then(|c| c.get(0))

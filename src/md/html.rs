@@ -42,6 +42,9 @@ pub struct HtmlWriter<'a, I, W> {
 	/// Whether or not the last write wrote a newline.
 	end_newline: bool,
 
+    /// Don't push <p> tags
+    no_paragraph: bool,
+
 	table_state: TableState,
 	table_alignments: Vec<Alignment>,
 	table_cell_index: usize,
@@ -53,11 +56,12 @@ where
 	I: Iterator<Item = Event<'a>>,
 	W: StrWrite,
 {
-	fn new(iter: I, writer: W, numbers: &'b mut HashMap<String, usize>) -> Self {
+	fn new(iter: I, writer: W, numbers: &'b mut HashMap<String, usize>, no_paragraph: bool) -> Self {
 		Self {
 			iter,
 			writer,
 			end_newline: true,
+            no_paragraph,
 			table_state: TableState::Head,
 			table_alignments: vec![],
 			table_cell_index: 0,
@@ -139,14 +143,16 @@ where
 	/// Writes the start of an HTML tag.
 	fn start_tag(&mut self, tag: Tag<'a>) -> io::Result<()> {
 		match tag {
-			Tag::Paragraph => {
+			Tag::Paragraph => if !self.no_paragraph {
 				if self.end_newline {
 					self.write("<p>")
 				} else {
 					self.write("\n<p>")
 				}
-			}
-			Tag::Heading(level) => {
+			} else {
+                Ok(())
+            }
+			Tag::Heading(level, _, _) => {
 				if self.end_newline {
 					self.end_newline = false;
 					write!(&mut self.writer, "<h{}>", level)
@@ -288,10 +294,10 @@ where
 
 	fn end_tag(&mut self, tag: Tag) -> io::Result<()> {
 		match tag {
-			Tag::Paragraph => {
+			Tag::Paragraph => if !self.no_paragraph {
 				self.write("</p>\n")?;
 			}
-			Tag::Heading(level) => {
+			Tag::Heading(level, _, _) => {
 				self.write("</h")?;
 				write!(&mut self.writer, "{}", level)?;
 				self.write(">\n")?;
@@ -415,10 +421,11 @@ pub fn push_html<'a, I>(
 	s: &mut String,
 	iter: I,
 	numbers: &mut HashMap<String, usize>,
+    no_paragraph: bool,
 ) where
 	I: Iterator<Item = Event<'a>>,
 {
-	HtmlWriter::new(iter, s, numbers).run().unwrap();
+	HtmlWriter::new(iter, s, numbers, no_paragraph).run().unwrap();
 }
 
 /// Iterate over an `Iterator` of `Event`s, generate HTML for each `Event`, and
@@ -458,11 +465,12 @@ pub fn write_html<'a, I, W>(
 	writer: W,
 	iter: I,
 	numbers: &mut HashMap<String, usize>,
+    no_paragraph: bool
 ) -> io::Result<()>
 where
 	I: Iterator<Item = Event<'a>>,
 	W: Write,
 {
-	HtmlWriter::new(iter, WriteWrapper(writer), numbers)
+	HtmlWriter::new(iter, WriteWrapper(writer), numbers, no_paragraph)
 		.run()
 }

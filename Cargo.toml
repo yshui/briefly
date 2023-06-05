@@ -10,27 +10,26 @@ serde = { version = "1", features = ["derive"] }
 serde_yaml = "*"
 chrono = "*"
 derive-error = "*"
-failure = { version = "*", features = ["backtrace"] }
 clap = "*"
-askama = "0"
-hubcaps = "0.6.1"
+askama = { version = "0.12.0", features = ["markdown"] }
 url = "2.1.1"
-serde_with = "1.4.0"
+serde_with = "3.0"
 futures = "0.3.5"
 async-std = { version = "1.6.3", features = ["unstable"] }
-tokio = { version = "0.2.22", features = ["macros"] }
-env_logger = "0.7.1"
+tokio = { version = "1.28.2", features = ["macros", "rt", "rt-multi-thread"] }
+env_logger = "0.10.0"
 log = "0.4.11"
 derive_more = "0.99.9"
-pulldown-cmark = "0.8.0"
-isahc = "0.9.8"
-scraper = "0.12.0"
+pulldown-cmark = "0.9.3"
+isahc = "1.7.2"
+scraper = "0.16.0"
 async-trait = "0.1.40"
-nom-bibtex = "0.3.0"
+nom-bibtex = "0.4.0"
 serde_json = "1.0.57"
-itertools = "0.9.0"
+itertools = "0.10.0"
 lazy_static = "1.4.0"
-
-[patch.crates-io]
-hubcaps = { path = "hubcaps" }
-
+octocrab = "0.24.0"
+anyhow = "1.0.71"
+hyper = "0.14.26"
+http = "0.2.9"
+hyper-rustls = "0.24.0"

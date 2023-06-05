@@ -1,0 +1,56 @@
+<div class="project_header">
+	<div class="project_info">
+	<div class="project_title">
+	<h2>
+		{% if project.url.is_some() %}
+		<a href="{{ project.url.as_ref().unwrap() }}" class="project_url">
+		{% endif %}
+		{% if project.role.is_some() && project.role.unwrap() == ProjectRole::Contributor %}
+		<span class="project_owner">{{ project.owner.as_ref().unwrap() }}/</span>{% endif %}{{ project.name }}
+		{% if project.url.is_some() %}
+		</a>
+		{% endif %}
+	</h2>
+	{% if project.active.is_none() || project.active.unwrap() %}
+		{% if project.stars.is_some() %}
+		<span class="project_stats"><img src="icons/star.svg"/>	{{ project.stars.unwrap() }}</span>
+		{% endif %}
+		{% if project.forks.is_some() %}
+		<span class="project_stats"><img src="icons/fork.svg"/>	{{ project.forks.unwrap() }}</span>
+		{% endif %}
+	{% endif %}
+	{% if project.active.is_some() && !project.active.unwrap() %}
+	<span class="project_stats archived">[archived]</span>
+	{% endif %}
+	{% if false %}<a href="{{ project.url.as_ref().unwrap() }}"><img src="icons/link.svg"/>	</a>{% endif %}
+	</div>
+	<div class="project_languages">
+	{% if !project.languages.is_empty() %}
+	{{ project.languages|language_stats }}
+	{% endif %}
+	</div>
+	</div>
+	{% if project.tags.is_empty() %}
+	<div class="project_topics noprint">
+	{% else %}
+	<div class="project_topics">
+	{% endif %}
+		{% for topic in project.tags %}
+		#{{ topic }}
+		{% endfor %}
+		{% if project.tags.is_empty() %}
+		<span style="opacity: 0">&nbsp;</span>
+		{% endif %}
+	</div>
+</div>
+{% if project.description.is_some() %}
+<div class="project_description">
+{{ project.description.as_ref().unwrap()|md|safe }}
+{% endif %}
+{% if project.contributions.is_some() %}
+<div class="contributions">
+Contributions<br>
+{{ project.contributions.as_ref().unwrap()|md|safe }}
+</div>
+{% endif %}
+</div>

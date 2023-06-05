@@ -2,7 +2,7 @@ use ::std::collections::HashMap;
 use ::std::sync::Mutex;
 use chrono::naive::NaiveDate as Date;
 use derive_more::Display;
-use failure::{format_err, Error};
+use anyhow::Error;
 use log::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 mod citation;
@@ -44,11 +44,11 @@ impl std::fmt::Display for DateRange {
 }
 
 impl std::str::FromStr for DateRange {
-	type Err = failure::Error;
+	type Err = anyhow::Error;
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		let p: Vec<_> = s.split("~").collect();
 		if p.len() != 2 {
-			Err(format_err!("A date range should have 2 and only 2 dates"))
+			Err(anyhow::anyhow!("A date range should have 2 and only 2 dates"))
 		} else {
 			Ok(DateRange {
 				start: Date::parse_from_str(&format!("{}-01", p[0]), "%Y-%m-%d").unwrap(),
@@ -327,6 +327,7 @@ struct LanguageStat {
 	percentage: Decimal1,
 }
 
+#[serde_with::serde_as]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Project {
 	name: String,
@@ -423,7 +424,7 @@ struct ResumeParams<'a> {
 	skills: &'a [Skill],
 }
 
-async fn fetch(mut person: Person) -> Result<Person, Error> {
+async fn fetch(mut person: Person) -> anyhow::Result<Person> {
 	use futures::stream::{StreamExt, TryStreamExt};
 	let github_username = person
 		.contacts
@@ -443,23 +444,14 @@ async fn fetch(mut person: Person) -> Result<Person, Error> {
 				token,
 			}) => {
 				if let Some(github_username) = github_username {
-					async_std::stream::Extend::extend(
-						&mut project_map,
-						github::get_user_projects_from_github(
-							github_username,
-							*ignore_forks,
-							token.clone(),
-						)?
-						.map_ok(|v| (v.name.clone(), v))
-						.map_err(|e| {
-							error!("Failed fetching from GitHub {}", e);
-							e
-						})
-						.filter_map(|x| futures::future::ready(x.ok())),
+					project_map.extend(
+						github::get_user_projects_from_github(*ignore_forks, token.clone())
+							.await?
+							.into_iter()
+							.map(|v| (v.name.clone(), v)),
 					)
-					.await;
 				} else {
-					error!("No github user name supplied");
+					return Err(anyhow::anyhow!("No github user name supplied"));
 				}
 			}
 			ProjectParam::Import(ProjectImport::GitHub {
@@ -467,21 +459,12 @@ async fn fetch(mut person: Person) -> Result<Person, Error> {
 				token,
 				..
 			}) => {
-				async_std::stream::Extend::extend(
-					&mut project_map,
-					github::get_projects_info_from_github(
-						repos,
-						github_username,
-						token.clone(),
-					)?
-					.map_ok(|v| (v.name.clone(), v))
-					.map_err(|e| {
-						error!("Failed fetching from GitHub {}", e);
-						e
-					})
-					.filter_map(|x| futures::future::ready(x.ok())),
-				)
-				.await;
+				project_map.extend(
+					github::get_projects_info_from_github(repos, token.clone())
+						.await?
+						.into_iter()
+						.map(|v| (v.name.clone(), v)),
+				);
 			}
 			ProjectParam::Sort { order_by } => {
 				sort_order = Some(*order_by);
@@ -682,11 +665,11 @@ fn build_params<'a>(
 
 fn main() -> Result<(), Error> {
 	env_logger::init();
-	let args = clap::App::new("resume")
-		.arg(clap::Arg::with_name("input").required(true))
+	let args = clap::Command::new("resume")
+		.arg(clap::Arg::new("input").required(true))
 		.get_matches();
-	warn!("{:?}", args.is_present("fetch"));
-	let input_filename = args.value_of("input").unwrap();
+	warn!("{:?}", args.contains_id("fetch"));
+	let input_filename = args.get_one::<String>("input").unwrap();
 	let cache_filename = format!("{}-cache", input_filename);
 	let cache_info = std::fs::metadata(&cache_filename);
 	let input_info = std::fs::metadata(&input_filename)?;

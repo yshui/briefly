@@ -8,32 +8,48 @@
 	<body>
 		{% if resume_url.is_some() %}
 		<div id="hint"><a href="{{ resume_url.unwrap() }}">
-			View Web<br>Version
+			View<br>Online
 		</a></div>
 		{% endif %}
+		<div id="main">
+		<div id="toc">
+			<ol>
+				<li><a href="#education">Education</a></li>
+				<li><a href="#work">Work</a></li>
+				<li><a href="#opensource">Open Source</a>
+					<ol>
+					<li><a href="#projects">Projects</a></li>
+					<li><a href="#contributions">Contributions</a></li>
+					</ol>
+				</li>
+				<li><a href="#skills">Skills</a></li>
+				<li><a href="#publication">Publications</a></li>
+			</ol>
+		</div>
 		<div id="header">
 			<div id="name">{{ name }}</div>
-			<div id="other">
-				{% for contact in contacts %}
-				<div class="contact_entry">
-					{% match contact.icon %}
-						{% when Some with (icon) %}
-						<img src="{{ icon }}"/>
-						{% when None %}
-					{% endmatch %}
-					{% match contact.link %}
-						{% when Some with (link) %}
-						<a href="{{ link }}">{{ contact.value }}</a>
-						{% when None %}
-						{{ contact.value }}
-					{% endmatch %}
-				</div>
-				{% endfor %}
+			<div class="contact_entry">
+			<div style="display:inline-block;">
+			{% for contact in contacts %}
+				{% match contact.icon %}
+					{% when Some with (icon) %}
+					<img src="{{ icon }}"/>
+					{% when None %}
+				{% endmatch %}
+				{% match contact.link %}
+					{% when Some with (link) %}
+					<a href="{{ link }}">{{ contact.value }}</a>
+					{% when None %}
+					{{ contact.value }}
+				{% endmatch %}
+				<br>
+			{% endfor %}
+			</div>
 			</div>
 		</div>
 		<div id="content">
 		<div>
-		<h1 class="section">Education</h1>
+		<h1 class="section" id="education">Education</h1>
 		<table>
 		{% for education in educations %}
 		<tr class="pagebreak">
@@ -56,9 +72,7 @@
 		</tr>
 		{% endfor %}
 		</table>
-		</div>
-		<div>
-		<h1 class="section" id="experiences">Experiences</h2>
+		<h1 class="section" id="work">Work</h2>
 		<table>
 		{% for experience in experiences %}
 		<tr class="pagebreak">
@@ -73,122 +87,50 @@
 					<img src="icons/location.svg"/> {{ experience.location.as_ref().unwrap() }}
 					{% endif %}
 				</div>
-				{{ experience.description | md | safe }}
+				{{ experience.description.clone()|md|safe }}
 			</td>
 		</tr>
 		{% endfor %}
 		</table>
 		</div>
 		<div>
-		<h1 class="section">Selected Projects</h1>
-		<table>
+		<h1 class="section" id="opensource" >Open Source</h1>
+		<h2 class="section">Projects</h2>
+		<div id="projects" class="multicolumn_print">
 		{% for project in projects %}
-		<tr class="pagebreak">
-			<td class="label" rowspan="3"></td>
-			<td class="title" colspan="2">
-			<div style="display:flex;justify-content:space-between;align-items:baseline">
-			<div class="project_title">
-			<h2>
-				{% if project.url.is_some() %}
-				<a href="{{ project.url.as_ref().unwrap() }}" class="project_url">
-				{% endif %}
-				{% if project.role.is_some() && project.role.unwrap() == ProjectRole::Contributor %}
-				<span class="project_owner">{{ project.owner.as_ref().unwrap() }}/</span>{% endif %}{{ project.name }}
-				{% if project.url.is_some() %}
-				</a>
-				{% endif %}
-			</h2>
-			{% if project.active.is_none() || project.active.unwrap() %}
-				{% if project.stars.is_some() %}
-				<img src="icons/star.svg"/><span class="project_stats">	{{ project.stars.unwrap() }}</span>
-				{% endif %}
-				{% if project.forks.is_some() %}
-				<img src="icons/fork.svg"/><span class="project_stats">	{{ project.forks.unwrap() }}</span>
-				{% endif %}
-			{% endif %}
-			{% if project.active.is_some() && !project.active.unwrap() %}
-			<span class="project_stats archived">[archived]</span>
-			{% endif %}
-			{% if false %}<a href="{{ project.url.as_ref().unwrap() }}"><img src="icons/link.svg"/>	</a>{% endif %}
-			</div>
-			{% if project.role.is_some() %}
-			<span class="additional_title">
-				{{ project.role.as_ref().unwrap() }}
-			</span>
-			{% endif %}
-			</div>
-			</td>
-		</tr>
-		<tr class="nopagebreak">
-			<td class="languages">
-			{% if !project.languages.is_empty() %}
-			{{ project.languages | language_stats }}
-			{% endif %}
-			</td>
-			<td class="topics">
-				{% for topic in project.tags %}
-				#{{ topic }}
-				{% endfor %}
-				{% if project.tags.is_empty() %}
-				<span style="opacity: 0">&nbsp;</span>
-				{% endif %}
-			</td>
-		</tr>
-		<tr class="nopagebreak">
-			<td colspan="2" class="content">
-				{% if project.description.is_some() %}
-				<div>{{ project.description.as_ref().unwrap() | md | safe }}</div>
-				{% endif %}
-				{% if project.contributions.is_some() %}
-				<div class="contributions">
-					<div class="subsubsection">
-						Contributions<br>
-						<span class="contribution-stats">
-					{% if project.commits.is_some() %}
-					{{ project.commits.unwrap() }}
-					{% if project.commits.unwrap() > 1 %}
-					commits
-					{% else %}
-					commit
-					{% endif %}
-					{% endif %}
-					{% if project.additions.is_some() %}
-					{{ project.additions.unwrap() }} ++
-					{% endif %}
-					{% if project.deletions.is_some() %}
-					{{ project.deletions.unwrap() }} --
-					{% endif %}
-						</span>
-					</div>
-				{{ project.contributions.as_ref().unwrap() | md | safe }}
-				</div>
-				{% endif %}
-			</td>
-		</tr>
+		{% if project.role == Some(ProjectRole::Owner) %}
+		{% include "project.html" %}
+		{% endif %}
 		{% endfor %}
-		</table>
 		</div>
+		<h2 class="section">Contributions</h2>
+		<div id="contributions" class="multicolumn_print">
+		{% for project in projects %}
+		{% if project.role == Some(ProjectRole::Contributor) %}
+		{% include "contribution.html" %}
+		{% endif %}
+		{% endfor %}
+		</div>
+		</div>
+
 		{% if !skills.is_empty() %}
 		<div>
-		<h1 class="section">Additional Skills</h1>
-		<table>
-			{% for s in skills %}
-			<tr>
-				<td class="label">&nbsp;</td>
-				<td class="offset">
-					<h3 class="display trim_end">{{ s.category }}</h3>
-					{% if s.description.is_some() %}
-					{{ s.description.as_ref().unwrap() }}
-					{% endif %}
-				</td>
-			</tr>
-			{% endfor %}
-		</table>
+		<h1 class="section">Skills</h1>
+		<div id="skills" class="multicolumn_print">
+		{% for s in skills %}
+		<p class="skill">
+			<span class="display skill_header">{{ s.category }}</span>
+			{% if s.description.is_some() %}
+			{{ s.description.as_ref().unwrap()|inline_md|safe }}
+			{% endif %}
+		</p>
+		{% endfor %}
+		</div>
 		</div>
 		{% endif %}
 		{% if !publications.is_empty() %}
 		<div>
-		<h1 class="section">Publications</h1>
+		<h1 class="section" id="publication">Publications</h1>
 		<table>
 		{% for (p, y) in publications %}
 		<tr>
@@ -206,13 +148,16 @@
 		{% if !references.is_empty() %}
 		<div class="references">
 		<h1 class="section">References</h1>
+		<div id="references" class="multicolumn_print">
 		<ul>
 		{% for (k, v) in references %}
 		<li id="{{ k }}" class="reference">{{ v }}</li>
 		{% endfor %}
 		</ul>
 		</div>
+		</div>
 		{% endif %}
 		<div id="footer"><div>Created with <a href="https://github.com/yshui/briefly"><i>briefly</i></a>, a resume generator by <a href="https://github.com/yshui">yshui</a>. <span class="noprint">Hosted on <a href="https://ipfs.io">ipfs</a>.</span> </div></div>
+		</div>
 	</body>
 </html>
