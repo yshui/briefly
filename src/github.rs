@@ -113,6 +113,8 @@ where
 		.enable_http1()
 		.build();
 
+    // When running from github actions
+    let token = token.unwrap_or_else(|| std::env::var("GITHUB_TOKEN").unwrap());
 	let client = hyper::Client::builder().build(connector);
 	let gh = OctocrabBuilder::new_empty()
 		.with_service(client)
@@ -124,7 +126,7 @@ where
 				(http::header::USER_AGENT, "briefly/0.0".parse().unwrap()),
 				(
 					http::header::AUTHORIZATION,
-					format!("Bearer {}", token.unwrap_or_default())
+					format!("Bearer {}", token)
 						.parse()
 						.unwrap(),
 				),
