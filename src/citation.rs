@@ -1,10 +1,10 @@
 use ::isahc::{prelude::*, Request};
 use ::log::*;
-use ::scraper::{Html, Selector};
 use ::serde::{Deserialize, Serialize};
 use ::std::collections::HashMap;
 use ::std::fmt::Write;
 use anyhow::Error;
+use html5gum::{Token, Tokenizer};
 
 #[serde_with::serde_as]
 #[derive(Deserialize, Serialize, Debug)]
@@ -19,11 +19,31 @@ impl UrlCitation {
 	pub(crate) async fn fetch(&mut self) -> Result<(), Error> {
 		let mut response = isahc::get_async(self.url.as_str()).await?;
 		let text = response.text().await?;
-		let html = Html::parse_document(&text);
-		self.title = html
-			.select(&Selector::parse("title").unwrap())
-			.next()
-			.map(|e| e.inner_html());
+		let mut title_bytes = Vec::new();
+		let mut title = None;
+		let mut in_title = false;
+		for token in Tokenizer::new(&text).infallible() {
+			match token {
+				Token::StartTag(tag) if tag.name.as_slice() == b"title" => {
+					if title.is_none() {
+						in_title = true;
+					}
+				}
+				Token::String(s) => {
+					if in_title {
+						title_bytes.extend_from_slice(s.as_slice())
+					}
+				}
+				Token::EndTag(tag) if tag.name.as_slice() == b"title" => {
+					if title.is_none() {
+						title = Some(String::from_utf8_lossy(&title_bytes).to_string());
+						in_title = false;
+					}
+				}
+				_ => (),
+			}
+		}
+		self.title = title;
 		Ok(())
 	}
 

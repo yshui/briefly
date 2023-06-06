@@ -146,6 +146,9 @@ body {
 
 .contrib_project_title {
 	display: inline !important;
+	margin-top: 0em !important;
+	margin-bottom: 0em !important;
+	font-size: 1.1em;
 }
 
 .skill {

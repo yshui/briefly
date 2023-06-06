@@ -668,7 +668,6 @@ fn main() -> Result<(), Error> {
 	let args = clap::Command::new("resume")
 		.arg(clap::Arg::new("input").required(true))
 		.get_matches();
-	warn!("{:?}", args.contains_id("fetch"));
 	let input_filename = args.get_one::<String>("input").unwrap();
 	let cache_filename = format!("{}-cache", input_filename);
 	let cache_info = std::fs::metadata(&cache_filename);

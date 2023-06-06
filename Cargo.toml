@@ -2,34 +2,31 @@
 name = "briefly"
 version = "0.1.0"
 authors = ["Yuxuan Shui <yshuiv7@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-tera = "1"
 serde = { version = "1", features = ["derive"] }
-serde_yaml = "*"
-chrono = "*"
-derive-error = "*"
-clap = "*"
+serde_yaml = "0.9"
+chrono = "0.4"
+clap = "4.3"
 askama = { version = "0.12.0", features = ["markdown"] }
 url = "2.1.1"
 serde_with = "3.0"
 futures = "0.3.5"
-async-std = { version = "1.6.3", features = ["unstable"] }
 tokio = { version = "1.28.2", features = ["macros", "rt", "rt-multi-thread"] }
 env_logger = "0.10.0"
 log = "0.4.11"
 derive_more = "0.99.9"
 pulldown-cmark = "0.9.3"
 isahc = "1.7.2"
-scraper = "0.16.0"
-async-trait = "0.1.40"
+html_parser = "0.7.0"
 nom-bibtex = "0.4.0"
 serde_json = "1.0.57"
 itertools = "0.10.0"
 lazy_static = "1.4.0"
-octocrab = "0.24.0"
+octocrab = "0.25.0"
 anyhow = "1.0.71"
 hyper = "0.14.26"
 http = "0.2.9"
 hyper-rustls = "0.24.0"
+html5gum = "0.5.2"

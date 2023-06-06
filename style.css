@@ -241,11 +241,13 @@ p {
 #opensource {
 }
 .contrib_project_title {
-	font-size: 1.1em;
+	font-size: 1.2em;
 	font-family: 'Playfair Display', serif;
 	white-space: nowrap;
 	font-weight: bold;
 	display: block;
+	margin-top: 0.6em;
+	margin-bottom: 0.2em;
 }
 
 .project_title {
@@ -478,5 +480,5 @@ body {
 }
 
 .contrib {
-	margin-bottom: 1em;
+	margin-bottom: 0.8em;
 }
