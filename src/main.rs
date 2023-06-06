@@ -1,8 +1,9 @@
+#![allow(clippy::single_match)]
 use ::std::collections::HashMap;
 use ::std::sync::Mutex;
+use anyhow::Error;
 use chrono::naive::NaiveDate as Date;
 use derive_more::Display;
-use anyhow::Error;
 use log::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 mod citation;
@@ -46,13 +47,15 @@ impl std::fmt::Display for DateRange {
 impl std::str::FromStr for DateRange {
 	type Err = anyhow::Error;
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let p: Vec<_> = s.split("~").collect();
+		let p: Vec<_> = s.split('~').collect();
 		if p.len() != 2 {
-			Err(anyhow::anyhow!("A date range should have 2 and only 2 dates"))
+			Err(anyhow::anyhow!(
+				"A date range should have 2 and only 2 dates"
+			))
 		} else {
 			Ok(DateRange {
 				start: Date::parse_from_str(&format!("{}-01", p[0]), "%Y-%m-%d").unwrap(),
-				end: if p[1] == "" {
+				end: if p[1].is_empty() {
 					None
 				} else {
 					Some(Date::parse_from_str(&format!("{}-01", p[1]), "%Y-%m-%d").unwrap())
@@ -196,6 +199,7 @@ struct Person {
 	publications: Vec<Citation>,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
 enum ProjectParam {
@@ -254,7 +258,7 @@ enum ProjectRole {
 struct Decimal1(u64);
 impl ::std::fmt::Display for Decimal1 {
 	fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-		<f64 as ::std::fmt::Display>::fmt(&self.into(), f)
+		<f64 as ::std::fmt::Display>::fmt(&(*self).into(), f)
 	}
 }
 
@@ -277,15 +281,9 @@ impl From<f64> for Decimal1 {
 	}
 }
 
-impl Into<f64> for &Decimal1 {
-	fn into(self) -> f64 {
-		self.0 as f64 / 10.0
-	}
-}
-
-impl Into<f64> for Decimal1 {
-	fn into(self) -> f64 {
-		(&self).into()
+impl From<Decimal1> for f64 {
+	fn from(f: Decimal1) -> f64 {
+		f.0 as f64 / 10.0
 	}
 }
 
@@ -317,7 +315,7 @@ impl ::serde::Serialize for Decimal1 {
 	where
 		S: Serializer,
 	{
-		serializer.serialize_f64(self.into())
+		serializer.serialize_f64((*self).into())
 	}
 }
 
@@ -425,7 +423,7 @@ struct ResumeParams<'a> {
 }
 
 async fn fetch(mut person: Person) -> anyhow::Result<Person> {
-	use futures::stream::{StreamExt, TryStreamExt};
+	use futures::stream::TryStreamExt;
 	let github_username = person
 		.contacts
 		.iter()
@@ -442,28 +440,26 @@ async fn fetch(mut person: Person) -> anyhow::Result<Person> {
 				ignore_forks,
 				repos: None,
 				token,
-			}) => {
-				if let Some(github_username) = github_username {
-					project_map.extend(
-						github::get_user_projects_from_github(*ignore_forks, token.clone())
-							.await?
-							.into_iter()
-							.map(|v| (v.name.clone(), v)),
-					)
-				} else {
-					return Err(anyhow::anyhow!("No github user name supplied"));
-				}
-			}
+			}) => project_map.extend(
+				github::get_user_projects_from_github(*ignore_forks, token.clone())
+					.await?
+					.into_iter()
+					.map(|v| (v.name.clone(), v)),
+			),
 			ProjectParam::Import(ProjectImport::GitHub {
 				repos: Some(repos),
 				token,
 				..
 			}) => {
 				project_map.extend(
-					github::get_projects_info_from_github(repos, token.clone())
-						.await?
-						.into_iter()
-						.map(|v| (v.name.clone(), v)),
+					github::get_projects_info_from_github(
+						repos,
+						token.clone(),
+						github_username.map(ToOwned::to_owned),
+					)
+					.await?
+					.into_iter()
+					.map(|v| (v.name.clone(), v)),
 				);
 			}
 			ProjectParam::Sort { order_by } => {
